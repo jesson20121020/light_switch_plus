@@ -1,0 +1,22 @@
+{
+    "config": {
+      "step": {
+        "user": {
+          "data": {
+            "name": "新灯的名称",
+            "switch_entity": "开关实体",
+            "light_entity": "灯光实体",
+            "sync_state": "状态同步"
+          },
+          "description": "结合智能开关和智能灯",
+          "title": "智能灯和开关合并"
+        }
+      },
+      "abort": {
+        "already_configured": "该设备已经配置过了",
+        "switch_required": "开关是必选项",
+        "switch_not_found": "开关实体未找到",
+        "light_not_found": "灯光实体未找到"
+      }
+    }
+  }

@@ -1,0 +1,10 @@
+{
+  "domain": "light_switch_plus",
+  "name": "Light Switch+",
+  "version": "7.0.0",
+  "codeowners": ["@yourusername"],
+  "documentation": "https://github.com/yourusername/home-assistant-light-switch",
+  "requirements": [],
+  "iot_class": "local_polling",
+  "config_flow": true
+}

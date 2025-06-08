@@ -1,0 +1,22 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "name": "Name",
+          "switch_entity": "Switch entity (required)",
+          "light_entity": "Light entity (optional)",
+          "sync_state": "Sync light settings when turning on"
+        },
+        "description": "Create a virtual light that combines a power switch and a smart light",
+        "title": "Light Switch+ Configuration"
+      }
+    },
+    "abort": {
+      "already_configured": "This device is already configured",
+      "switch_required": "Switch entity is required",
+      "switch_not_found": "Switch entity not found",
+      "light_not_found": "Light entity not found"
+    }
+  }
+}
