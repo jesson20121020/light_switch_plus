@@ -91,19 +91,20 @@ class LightSwitchPlus(LightEntity, RestoreEntity):
         if not light_state:
             return
             
-        supported = 0
         attrs = light_state.attributes
-        
-        if attrs.get(ATTR_BRIGHTNESS) is not None:
-            supported |= SUPPORT_BRIGHTNESS
-        if attrs.get(ATTR_COLOR_TEMP) is not None:
-            supported |= SUPPORT_COLOR_TEMP
-        if attrs.get(ATTR_RGB_COLOR) is not None or attrs.get(ATTR_HS_COLOR) is not None:
-            supported |= SUPPORT_COLOR
-        if attrs.get("effect_list") is not None:
-            supported |= SUPPORT_EFFECT
-            
-        self._attr_supported_features = supported
+        self._attr_supported_features = attrs.get("supported_features", 0)
+        if attrs.get("min_color_temp_kelvin"):
+            self._attr_min_color_temp_kelvin = attrs.get("min_color_temp_kelvin")
+        if attrs.get("max_color_temp_kelvin"):
+            self._attr_max_color_temp_kelvin = attrs.get("max_color_temp_kelvin")
+        if attrs.get("min_mireds"):
+            self._attr_min_mireds = attrs.get("min_mireds")
+        if attrs.get("max_mireds"):
+            self._attr_max_mireds = attrs.get("max_mireds")
+        if attrs.get("effect_list"):
+            self._attr_effect_list = attrs.get("effect_list")
+        if attrs.get("supported_color_modes"):
+            self._attr_supported_color_modes = set(attrs.get("supported_color_modes"))
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -122,6 +123,44 @@ class LightSwitchPlus(LightEntity, RestoreEntity):
             name=self._attr_name,
             manufacturer="Light Switch+"
         )
+
+    def _update_light_attributes(self, state):
+        """Update attributes from light entity."""
+        if not state:
+            return
+            
+        # Store last state for sync
+        self._last_light_state = {
+            k: state.attributes[k] for k in [
+                ATTR_BRIGHTNESS, ATTR_COLOR_TEMP, 
+                ATTR_RGB_COLOR, ATTR_HS_COLOR, ATTR_EFFECT
+            ] if k in state.attributes
+        }
+        
+        # Update attributes when switch is on
+        if self._attr_is_on:
+            if ATTR_BRIGHTNESS in state.attributes:
+                self._attr_brightness = state.attributes[ATTR_BRIGHTNESS]
+            if ATTR_COLOR_TEMP in state.attributes:
+                self._attr_color_temp = state.attributes[ATTR_COLOR_TEMP]
+            if ATTR_RGB_COLOR in state.attributes:
+                self._attr_rgb_color = state.attributes[ATTR_RGB_COLOR]
+            if ATTR_HS_COLOR in state.attributes:
+                self._attr_hs_color = state.attributes[ATTR_HS_COLOR]
+            if ATTR_EFFECT in state.attributes:
+                self._attr_effect = state.attributes[ATTR_EFFECT]
+
+    async def async_update(self) -> None:
+        """Update the state."""
+        # Update switch state
+        switch_state = self.hass.states.get(self._switch_entity)
+        if switch_state:
+            self._attr_is_on = switch_state.state == STATE_ON
+            self._attr_available = switch_state.state not in ["unavailable", "unknown"]
+        
+        # Update light attributes if available
+        if self._light_entity:
+            self._update_light_attributes(self.hass.states.get(self._light_entity))
 
     async def async_added_to_hass(self) -> None:
         """当实体添加到Home Assistant时运行"""
