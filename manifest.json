@@ -7,6 +7,7 @@
   "requirements": [],
   "iot_class": "local_polling",
   "config_flow": true,
+  "after": ["xiaomi_home", "xiaomi_miot"], 
   "icon": "icons/icon.svg",
   "brands": {
     "your_integration": {

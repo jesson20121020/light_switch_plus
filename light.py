@@ -4,27 +4,24 @@ from typing import Any, Optional
 
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
-    ATTR_COLOR_TEMP,
+    ATTR_COLOR_TEMP_KELVIN,
     ATTR_RGB_COLOR,
     ATTR_HS_COLOR,
     ATTR_EFFECT,
-    SUPPORT_BRIGHTNESS,
-    SUPPORT_COLOR_TEMP,
-    SUPPORT_COLOR,
-    SUPPORT_EFFECT,
     LightEntity,
+    ColorMode,
+    LightEntityFeature,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     SERVICE_TURN_OFF,
     SERVICE_TURN_ON,
-    STATE_OFF,
     STATE_ON
 )
+from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.event import async_track_state_change
 from homeassistant.helpers.restore_state import RestoreEntity
 import homeassistant.util.color as color_util
 
@@ -70,13 +67,14 @@ class LightSwitchPlus(LightEntity, RestoreEntity):
         self._sync_state = sync_state
         self._attr_is_on = False
         self._attr_brightness = None
-        self._attr_color_temp = None
+        self._attr_temp_color = None
         self._attr_rgb_color = None
         self._attr_hs_color = None
         self._attr_effect = None
-        self._attr_supported_features = 0
         self._unsub_listener = None
         self._last_light_state = {}
+        self._attr_supported_features = 0
+        self._attr_supported_modes = set()
         
         # 更新支持的功能
         self._update_supported_features()
@@ -84,7 +82,6 @@ class LightSwitchPlus(LightEntity, RestoreEntity):
     def _update_supported_features(self):
         """根据灯光实体更新支持的功能"""
         if not self._light_entity:
-            self._attr_supported_features = 0
             return
             
         light_state = self.hass.states.get(self._light_entity)
@@ -92,19 +89,29 @@ class LightSwitchPlus(LightEntity, RestoreEntity):
             return
             
         attrs = light_state.attributes
+        self._attr_supported_modes.clear()
+
         self._attr_supported_features = attrs.get("supported_features", 0)
         if attrs.get("min_color_temp_kelvin"):
+            self._attr_supported_modes.add(ColorMode.COLOR_TEMP)
             self._attr_min_color_temp_kelvin = attrs.get("min_color_temp_kelvin")
         if attrs.get("max_color_temp_kelvin"):
             self._attr_max_color_temp_kelvin = attrs.get("max_color_temp_kelvin")
         if attrs.get("min_mireds"):
+            self._attr_supported_modes.add(ColorMode.BRIGHTNESS)
             self._attr_min_mireds = attrs.get("min_mireds")
         if attrs.get("max_mireds"):
             self._attr_max_mireds = attrs.get("max_mireds")
         if attrs.get("effect_list"):
+            self._attr_supported_modes.add(LightEntityFeature.EFFECT)
             self._attr_effect_list = attrs.get("effect_list")
         if attrs.get("supported_color_modes"):
-            self._attr_supported_color_modes = set(attrs.get("supported_color_modes"))
+             self._attr_supported_color_modes = set(attrs.get("supported_color_modes"))
+
+    @property
+    def supported_modes(self) -> set[ColorMode | LightEntityFeature]:
+        """返回支持的色彩模式（必须实现）。"""
+        return self._attr_supported_modes
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -132,7 +139,7 @@ class LightSwitchPlus(LightEntity, RestoreEntity):
         # Store last state for sync
         self._last_light_state = {
             k: state.attributes[k] for k in [
-                ATTR_BRIGHTNESS, ATTR_COLOR_TEMP, 
+                ATTR_BRIGHTNESS, ATTR_COLOR_TEMP_KELVIN, 
                 ATTR_RGB_COLOR, ATTR_HS_COLOR, ATTR_EFFECT
             ] if k in state.attributes
         }
@@ -141,8 +148,8 @@ class LightSwitchPlus(LightEntity, RestoreEntity):
         if self._attr_is_on:
             if ATTR_BRIGHTNESS in state.attributes:
                 self._attr_brightness = state.attributes[ATTR_BRIGHTNESS]
-            if ATTR_COLOR_TEMP in state.attributes:
-                self._attr_color_temp = state.attributes[ATTR_COLOR_TEMP]
+            if ATTR_COLOR_TEMP_KELVIN in state.attributes:
+                self._attr_temp_color = state.attributes[ATTR_COLOR_TEMP_KELVIN]
             if ATTR_RGB_COLOR in state.attributes:
                 self._attr_rgb_color = state.attributes[ATTR_RGB_COLOR]
             if ATTR_HS_COLOR in state.attributes:
@@ -171,17 +178,13 @@ class LightSwitchPlus(LightEntity, RestoreEntity):
         if last_state:
             self._attr_is_on = last_state.state == STATE_ON
             self._attr_brightness = last_state.attributes.get(ATTR_BRIGHTNESS)
-            self._attr_color_temp = last_state.attributes.get(ATTR_COLOR_TEMP)
+            self._attr_temp_color = last_state.attributes.get(ATTR_COLOR_TEMP_KELVIN)
             self._attr_rgb_color = last_state.attributes.get(ATTR_RGB_COLOR)
             self._attr_hs_color = last_state.attributes.get(ATTR_HS_COLOR)
             self._attr_effect = last_state.attributes.get(ATTR_EFFECT)
         
         # 开始监听状态变化
-        self._unsub_listener = async_track_state_change(
-            self.hass, 
-            [self._switch_entity] + ([self._light_entity] if self._light_entity else []), 
-            self._async_state_changed
-        )
+        self._unsub_listener = async_track_state_change_event(self.hass, [self._switch_entity] + ([self._light_entity] if self._light_entity else []), self._async_state_changed)
         
         # 初始更新
         self.async_schedule_update_ha_state(True)
@@ -219,7 +222,7 @@ class LightSwitchPlus(LightEntity, RestoreEntity):
             
         # 更新属性
         self._attr_brightness = new_state.attributes.get(ATTR_BRIGHTNESS)
-        self._attr_color_temp = new_state.attributes.get(ATTR_COLOR_TEMP)
+        self._attr_temp_color = new_state.attributes.get(ATTR_COLOR_TEMP_KELVIN)
         self._attr_rgb_color = new_state.attributes.get(ATTR_RGB_COLOR)
         self._attr_hs_color = new_state.attributes.get(ATTR_HS_COLOR)
         self._attr_effect = new_state.attributes.get(ATTR_EFFECT)
@@ -227,7 +230,7 @@ class LightSwitchPlus(LightEntity, RestoreEntity):
         # 保存最后的状态用于同步
         self._last_light_state = {
             k: new_state.attributes[k] for k in [
-                ATTR_BRIGHTNESS, ATTR_COLOR_TEMP, 
+                ATTR_BRIGHTNESS, ATTR_COLOR_TEMP_KELVIN, 
                 ATTR_RGB_COLOR, ATTR_HS_COLOR, ATTR_EFFECT
             ] if k in new_state.attributes
         }
