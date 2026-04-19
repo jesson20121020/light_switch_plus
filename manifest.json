@@ -1,7 +1,7 @@
 {
   "domain": "light_switch_plus",
   "name": "Light Switch+",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "codeowners": ["@jesson20121020"],
   "documentation": "https://gitee.com/jesson20121020/light_switch_plus",
   "requirements": [],

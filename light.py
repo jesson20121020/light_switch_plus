@@ -4,7 +4,6 @@ from typing import Any, Optional
 
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
-    ATTR_COLOR_TEMP,
     ATTR_COLOR_TEMP_KELVIN,
     ATTR_RGB_COLOR,
     ATTR_HS_COLOR,
@@ -68,7 +67,6 @@ class LightSwitchPlus(LightEntity, RestoreEntity):
         self._sync_state = sync_state
         self._attr_is_on = False
         self._attr_brightness = None
-        self._attr_color_temp = None
         self._attr_color_temp_kelvin = None
         self._attr_rgb_color = None
         self._attr_hs_color = None
@@ -80,7 +78,7 @@ class LightSwitchPlus(LightEntity, RestoreEntity):
         self._attr_min_color_temp_kelvin = None
         self._attr_max_color_temp_kelvin = None
         self._attr_effect_list = []
-        
+
         # 设置默认颜色模式
         self._attr_color_mode = ColorMode.ONOFF
         
@@ -179,8 +177,6 @@ class LightSwitchPlus(LightEntity, RestoreEntity):
                 self._attr_brightness = state.attributes[ATTR_BRIGHTNESS]
             if ATTR_COLOR_TEMP_KELVIN in state.attributes:
                 self._attr_color_temp_kelvin = state.attributes[ATTR_COLOR_TEMP_KELVIN]
-            if ATTR_COLOR_TEMP in state.attributes:
-                self._attr_color_temp = state.attributes[ATTR_COLOR_TEMP]
             if ATTR_RGB_COLOR in state.attributes:
                 self._attr_rgb_color = state.attributes[ATTR_RGB_COLOR]
             if ATTR_HS_COLOR in state.attributes:
@@ -230,7 +226,6 @@ class LightSwitchPlus(LightEntity, RestoreEntity):
             self._attr_is_on = last_state.state == STATE_ON
             self._attr_brightness = last_state.attributes.get(ATTR_BRIGHTNESS)
             self._attr_color_temp_kelvin = last_state.attributes.get(ATTR_COLOR_TEMP_KELVIN)
-            self._attr_color_temp = last_state.attributes.get(ATTR_COLOR_TEMP)
             self._attr_rgb_color = last_state.attributes.get(ATTR_RGB_COLOR)
             self._attr_hs_color = last_state.attributes.get(ATTR_HS_COLOR)
             self._attr_effect = last_state.attributes.get(ATTR_EFFECT)
@@ -316,7 +311,6 @@ class LightSwitchPlus(LightEntity, RestoreEntity):
         # 更新属性
         self._attr_brightness = new_state.attributes.get(ATTR_BRIGHTNESS)
         self._attr_color_temp_kelvin = new_state.attributes.get(ATTR_COLOR_TEMP_KELVIN)
-        self._attr_color_temp = new_state.attributes.get(ATTR_COLOR_TEMP)
         self._attr_rgb_color = new_state.attributes.get(ATTR_RGB_COLOR)
         self._attr_hs_color = new_state.attributes.get(ATTR_HS_COLOR)
         self._attr_effect = new_state.attributes.get(ATTR_EFFECT)
