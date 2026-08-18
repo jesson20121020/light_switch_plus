@@ -1,5 +1,4 @@
 """Home Assistant module stubs for Light Switch+ tests."""
-import os
 import sys
 import types
 
@@ -122,20 +121,5 @@ def install_ha_stubs():
         "homeassistant.util.color",
         color_temperature_mired_to_kelvin=lambda mireds: round(1_000_000 / mireds),
     )
-
-    custom_components = types.ModuleType("custom_components")
-    custom_components.__path__ = []
-    sys.modules["custom_components"] = custom_components
-
-    light_switch_plus = types.ModuleType("custom_components.light_switch_plus")
-    light_switch_plus.__path__ = [
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    ]
-    sys.modules["custom_components.light_switch_plus"] = light_switch_plus
-
-    const = types.ModuleType("custom_components.light_switch_plus.const")
-    const.DOMAIN = "light_switch_plus"
-    sys.modules["custom_components.light_switch_plus.const"] = const
-
 
 install_ha_stubs()
